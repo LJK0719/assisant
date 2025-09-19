@@ -3,49 +3,7 @@ import { DatabaseTools } from './database-tools';
 import { Agent2 } from './agent2';
 import { Task, TaskType, InsertTask } from '@/lib/db';
 import { ChatMessage, findRecentComplexTask } from '@/lib/chat-history';
-
-// 思考进度管理器
-class ThinkingProgressManager {
-  private static instance: ThinkingProgressManager;
-  private progress: string[] = [];
-
-  static getInstance(): ThinkingProgressManager {
-    if (!ThinkingProgressManager.instance) {
-      ThinkingProgressManager.instance = new ThinkingProgressManager();
-    }
-    return ThinkingProgressManager.instance;
-  }
-
-  add(message: string) {
-    this.progress.push(`${new Date().toLocaleTimeString()}: ${message}`);
-    // 异步更新API进度
-    this.updateProgress();
-  }
-
-  clear() {
-    this.progress = [];
-    this.updateProgress();
-  }
-
-  get() {
-    return [...this.progress];
-  }
-
-  private async updateProgress() {
-    try {
-      await fetch('/api/ai/thinking-progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'set', 
-          message: this.progress 
-        }),
-      });
-    } catch (error) {
-      console.error('更新思考进度失败:', error);
-    }
-  }
-}
+import { thinkingProgressStore } from '@/lib/thinking-progress-store';
 
 // 定义分析结果的接口
 interface AnalysisResult {
@@ -70,12 +28,10 @@ const openai = new OpenAI({
 export class Agent1 {
   private dbTools: DatabaseTools;
   private agent2: Agent2;
-  private progressManager: ThinkingProgressManager;
 
   constructor() {
     this.dbTools = new DatabaseTools();
     this.agent2 = new Agent2();
-    this.progressManager = ThinkingProgressManager.getInstance();
   }
 
   /**
@@ -98,14 +54,14 @@ export class Agent1 {
   }> {
     
     // 清除之前的进度并开始新的思考过程
-    this.progressManager.clear();
-    this.progressManager.add('开始分析用户输入');
-    this.progressManager.add(`输入内容: ${input.slice(0, 50)}${input.length > 50 ? '...' : ''}`);
+    thinkingProgressStore.clear();
+    thinkingProgressStore.add('开始分析用户输入');
+    thinkingProgressStore.add(`输入内容: ${input.slice(0, 50)}${input.length > 50 ? '...' : ''}`);
     try {
       console.log(`[Agent1] 处理用户输入: ${input}`);
 
       // 分析用户输入类型
-      this.progressManager.add('正在分析输入类型和意图...');
+      thinkingProgressStore.add('正在分析输入类型和意图...');
       const inputAnalysis = await this.analyzeUserInput(input);
       console.log(`[Agent1] 输入分析结果:`, inputAnalysis);
       
@@ -117,23 +73,23 @@ export class Agent1 {
       }
 
       if (inputAnalysis.type === 'adjustment') {
-        this.progressManager.add('识别为调整指令，开始处理...');
+        thinkingProgressStore.add('识别为调整指令，开始处理...');
         return await this.handleAdjustmentCommand(input);
       } else if (inputAnalysis.type === 'new_task') {
-        this.progressManager.add('识别为新任务，开始任务创建流程...');
+        thinkingProgressStore.add('识别为新任务，开始任务创建流程...');
         return await this.handleNewTask(input, inputAnalysis);
       } else if (inputAnalysis.type === 'complex_task') {
-        this.progressManager.add('识别为复杂任务，开始复杂任务处理...');
+        thinkingProgressStore.add('识别为复杂任务，开始复杂任务处理...');
         return await this.handleComplexTask(input);
       } else {
         // 检查是否是用户确认指令
-        this.progressManager.add('检查是否为确认指令...');
+        thinkingProgressStore.add('检查是否为确认指令...');
         const confirmationResult = await this.checkUserConfirmation(input, chatHistory, sessionId);
         if (confirmationResult.isConfirmation && confirmationResult.originalInput) {
-          this.progressManager.add('确认指令，执行用户确认...');
+          thinkingProgressStore.add('确认指令，执行用户确认...');
           return await this.handleUserConfirmation(confirmationResult.originalInput);
         }
-        this.progressManager.add('处理为一般查询...');
+        thinkingProgressStore.add('处理为一般查询...');
         return await this.handleGeneralQuery(input);
       }
 
@@ -760,14 +716,14 @@ ISO格式日期：${isoDate}
     while (attempt < maxRetries) {
       attempt++;
       console.log(`[Agent1] 智能编排尝试 ${attempt}/${maxRetries}`);
-      this.progressManager.add(`智能编排尝试 ${attempt}/${maxRetries}`);
+      thinkingProgressStore.add(`智能编排尝试 ${attempt}/${maxRetries}`);
 
       // 生成编排计划
-      this.progressManager.add('正在生成智能编排计划...');
+      thinkingProgressStore.add('正在生成智能编排计划...');
       const schedule = await this.generateSchedule(tasks);
       
       // 验证计划
-      this.progressManager.add('正在验证编排计划...');
+      thinkingProgressStore.add('正在验证编排计划...');
       const validation = await this.validateSchedule(schedule, tasks);
       
       if (validation.isValid) {
