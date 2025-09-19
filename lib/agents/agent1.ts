@@ -4,6 +4,49 @@ import { Agent2 } from './agent2';
 import { Task, TaskType, InsertTask } from '@/lib/db';
 import { ChatMessage, findRecentComplexTask } from '@/lib/chat-history';
 
+// 思考进度管理器
+class ThinkingProgressManager {
+  private static instance: ThinkingProgressManager;
+  private progress: string[] = [];
+
+  static getInstance(): ThinkingProgressManager {
+    if (!ThinkingProgressManager.instance) {
+      ThinkingProgressManager.instance = new ThinkingProgressManager();
+    }
+    return ThinkingProgressManager.instance;
+  }
+
+  add(message: string) {
+    this.progress.push(`${new Date().toLocaleTimeString()}: ${message}`);
+    // 异步更新API进度
+    this.updateProgress();
+  }
+
+  clear() {
+    this.progress = [];
+    this.updateProgress();
+  }
+
+  get() {
+    return [...this.progress];
+  }
+
+  private async updateProgress() {
+    try {
+      await fetch('/api/ai/thinking-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'set', 
+          message: this.progress 
+        }),
+      });
+    } catch (error) {
+      console.error('更新思考进度失败:', error);
+    }
+  }
+}
+
 // 定义分析结果的接口
 interface AnalysisResult {
   taskInfo?: Partial<InsertTask>;
@@ -27,10 +70,12 @@ const openai = new OpenAI({
 export class Agent1 {
   private dbTools: DatabaseTools;
   private agent2: Agent2;
+  private progressManager: ThinkingProgressManager;
 
   constructor() {
     this.dbTools = new DatabaseTools();
     this.agent2 = new Agent2();
+    this.progressManager = ThinkingProgressManager.getInstance();
   }
 
   /**
@@ -51,10 +96,16 @@ export class Agent1 {
       requiresConfirmation: boolean;
     };
   }> {
+    
+    // 清除之前的进度并开始新的思考过程
+    this.progressManager.clear();
+    this.progressManager.add('开始分析用户输入');
+    this.progressManager.add(`输入内容: ${input.slice(0, 50)}${input.length > 50 ? '...' : ''}`);
     try {
       console.log(`[Agent1] 处理用户输入: ${input}`);
 
       // 分析用户输入类型
+      this.progressManager.add('正在分析输入类型和意图...');
       const inputAnalysis = await this.analyzeUserInput(input);
       console.log(`[Agent1] 输入分析结果:`, inputAnalysis);
       
@@ -66,17 +117,23 @@ export class Agent1 {
       }
 
       if (inputAnalysis.type === 'adjustment') {
+        this.progressManager.add('识别为调整指令，开始处理...');
         return await this.handleAdjustmentCommand(input);
       } else if (inputAnalysis.type === 'new_task') {
+        this.progressManager.add('识别为新任务，开始任务创建流程...');
         return await this.handleNewTask(input, inputAnalysis);
       } else if (inputAnalysis.type === 'complex_task') {
+        this.progressManager.add('识别为复杂任务，开始复杂任务处理...');
         return await this.handleComplexTask(input);
       } else {
         // 检查是否是用户确认指令
+        this.progressManager.add('检查是否为确认指令...');
         const confirmationResult = await this.checkUserConfirmation(input, chatHistory, sessionId);
         if (confirmationResult.isConfirmation && confirmationResult.originalInput) {
+          this.progressManager.add('确认指令，执行用户确认...');
           return await this.handleUserConfirmation(confirmationResult.originalInput);
         }
+        this.progressManager.add('处理为一般查询...');
         return await this.handleGeneralQuery(input);
       }
 
@@ -697,17 +754,20 @@ ISO格式日期：${isoDate}
     response: string;
     actions?: string[];
   }> {
-    const maxRetries = 3;
+    const maxRetries = 5;
     let attempt = 0;
 
     while (attempt < maxRetries) {
       attempt++;
       console.log(`[Agent1] 智能编排尝试 ${attempt}/${maxRetries}`);
+      this.progressManager.add(`智能编排尝试 ${attempt}/${maxRetries}`);
 
       // 生成编排计划
+      this.progressManager.add('正在生成智能编排计划...');
       const schedule = await this.generateSchedule(tasks);
       
       // 验证计划
+      this.progressManager.add('正在验证编排计划...');
       const validation = await this.validateSchedule(schedule, tasks);
       
       if (validation.isValid) {
@@ -762,11 +822,17 @@ ISO格式日期：${isoDate}
 ISO格式日期：${isoDate}
 
 你是一个智能任务编排助手。请为以下任务安排合理的时间，遵循以下原则：
+
+⚠️ **重要约束：**
+- **固定时间的任务（isFixedTime: true）绝对不能更改时间！** 这些通常是课程、会议等有严格时间要求的事务
+- 有scheduledTime且isFixedTime为true的任务，必须保持原有时间不变
+
+📋 **编排原则：**
 1. 琐碎事务尽量堆积在一起集中处理
-2. 学习时间尽量连续不受打扰
-3. 固定时间的任务不能更改
-4. 考虑截止时间限制
-5. 考虑任务重要性（isRequired字段）
+2. 学习时间尽量连续不受打扰  
+3. 考虑截止时间限制
+4. 优先安排必需任务（isRequired: true）
+5. 合理分配工作量，避免时间冲突
 
 当前任务列表：
 ${JSON.stringify(tasks.map(t => ({

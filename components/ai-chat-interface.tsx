@@ -35,6 +35,8 @@ export function AIChatInterface({ className = '' }: AIChatInterfaceProps) {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [showThinkingDetails, setShowThinkingDetails] = useState(false);
+  const [thinkingProgress, setThinkingProgress] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -44,6 +46,25 @@ export function AIChatInterface({ className = '' }: AIChatInterfaceProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // 获取思考进度的函数
+  const fetchThinkingProgress = async () => {
+    try {
+      const response = await fetch('/api/ai/thinking-progress', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.progress) {
+          setThinkingProgress(data.progress);
+        }
+      }
+    } catch (error) {
+      console.error('获取思考进度失败:', error);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -58,6 +79,11 @@ export function AIChatInterface({ className = '' }: AIChatInterfaceProps) {
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
+    setThinkingProgress([]);
+    setShowThinkingDetails(false);
+
+    // 开始轮询思考进度
+    const progressInterval = setInterval(fetchThinkingProgress, 1000);
 
     try {
       const response = await fetch('/api/ai/chat', {
@@ -104,7 +130,11 @@ export function AIChatInterface({ className = '' }: AIChatInterfaceProps) {
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
+      // 清除轮询
+      clearInterval(progressInterval);
       setIsLoading(false);
+      setThinkingProgress([]);
+      setShowThinkingDetails(false);
     }
   };
 
@@ -214,14 +244,43 @@ export function AIChatInterface({ className = '' }: AIChatInterfaceProps) {
 
         {isLoading && (
           <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-              <Brain className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+            <div className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center`}>
+              <Brain className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-gray-600 dark:text-gray-300`} />
             </div>
-            <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                AI正在思考...
+            <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg flex-1">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  AI正在思考...
+                </div>
+                <button
+                  onClick={() => setShowThinkingDetails(!showThinkingDetails)}
+                  className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 ml-2"
+                >
+                  {showThinkingDetails ? '隐藏详情' : '查看详情'}
+                </button>
               </div>
+              
+              {/* 思考详情展示 */}
+              {showThinkingDetails && (
+                <div className="mt-3 p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs text-gray-600 dark:text-gray-400">
+                  <div className="font-medium mb-2">🧠 Agent工作进度:</div>
+                  {thinkingProgress.length > 0 ? (
+                    <div className="space-y-1">
+                      {thinkingProgress.map((progress, index) => (
+                        <div key={index} className="flex items-start gap-1">
+                          <span className="text-green-500 mt-0.5">•</span>
+                          <span>{progress}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-gray-500 dark:text-gray-500">
+                      正在初始化Agent思考过程...
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

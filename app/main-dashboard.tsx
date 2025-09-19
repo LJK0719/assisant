@@ -7,7 +7,7 @@ import { TaskList } from '@/components/task-list';
 import { ScheduleView } from '@/components/schedule-view';
 import { MessageBoard } from '@/components/message-board';
 import { Button } from '@/components/ui/button';
-import { MobileNavigation, useIsMobile, useTouchGestures } from '@/components/ui/mobile-navigation';
+import { MobileNavigation, useIsMobile } from '@/components/ui/mobile-navigation';
 import { Task } from '@/lib/db/schema/simple';
 import { 
   Calendar, 
@@ -54,27 +54,6 @@ export function MainDashboard() {
     setViewMode('chat');
   };
 
-  // 手势支持 - 左右滑动切换视图
-  const views: ViewMode[] = ['chat', 'tasks', 'schedule', 'messages'];
-  const currentIndex = views.indexOf(viewMode);
-  
-  const handleSwipeLeft = () => {
-    if (currentIndex < views.length - 1) {
-      setViewMode(views[currentIndex + 1]);
-    }
-  };
-
-  const handleSwipeRight = () => {
-    if (currentIndex > 0) {
-      setViewMode(views[currentIndex - 1]);
-    }
-  };
-
-  // 仅在移动端启用手势
-  useTouchGestures(
-    isMobile ? handleSwipeLeft : undefined,
-    isMobile ? handleSwipeRight : undefined
-  );
 
   // 任务统计
   const taskStats = {
