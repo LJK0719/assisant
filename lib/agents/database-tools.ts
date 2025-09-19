@@ -76,36 +76,54 @@ export class DatabaseTools {
    * 删除任务
    */
   async deleteTask(taskId: string): Promise<boolean> {
-    const result = await db
-      .delete(tasksTable)
-      .where(eq(tasksTable.id, taskId));
-    return result.rowCount ? result.rowCount > 0 : false;
+    try {
+      const result = await db
+        .delete(tasksTable)
+        .where(eq(tasksTable.id, taskId))
+        .returning({ id: tasksTable.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error('删除任务失败:', error);
+      return false;
+    }
   }
 
   /**
    * 删除已完成的任务
    */
   async deleteCompletedTasks(): Promise<number> {
-    const result = await db
-      .delete(tasksTable)
-      .where(eq(tasksTable.isCompleted, true));
-    return result.rowCount || 0;
+    try {
+      const result = await db
+        .delete(tasksTable)
+        .where(eq(tasksTable.isCompleted, true))
+        .returning({ id: tasksTable.id });
+      return result.length;
+    } catch (error) {
+      console.error('删除已完成任务失败:', error);
+      return 0;
+    }
   }
 
   /**
    * 删除已过期的任务（截止时间在当前时间之前且未完成）
    */
   async deleteExpiredTasks(): Promise<number> {
-    const now = new Date();
-    const result = await db
-      .delete(tasksTable)
-      .where(
-        and(
-          eq(tasksTable.isCompleted, false),
-          lt(tasksTable.deadline, now)
+    try {
+      const now = new Date();
+      const result = await db
+        .delete(tasksTable)
+        .where(
+          and(
+            eq(tasksTable.isCompleted, false),
+            lt(tasksTable.deadline, now)
+          )
         )
-      );
-    return result.rowCount || 0;
+        .returning({ id: tasksTable.id });
+      return result.length;
+    } catch (error) {
+      console.error('删除过期任务失败:', error);
+      return 0;
+    }
   }
 
   /**

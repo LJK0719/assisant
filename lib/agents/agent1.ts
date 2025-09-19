@@ -66,11 +66,11 @@ export class Agent1 {
       }
 
       if (inputAnalysis.type === 'adjustment') {
-        return await this.handleAdjustmentCommand(input, inputAnalysis);
+        return await this.handleAdjustmentCommand(input);
       } else if (inputAnalysis.type === 'new_task') {
         return await this.handleNewTask(input, inputAnalysis);
       } else if (inputAnalysis.type === 'complex_task') {
-        return await this.handleComplexTask(input, inputAnalysis);
+        return await this.handleComplexTask(input);
       } else {
         // 检查是否是用户确认指令
         const confirmationResult = await this.checkUserConfirmation(input, chatHistory, sessionId);
@@ -192,8 +192,7 @@ ISO格式日期：${isoDate}
    * 处理复杂任务（需要拆分的任务）
    */
   private async handleComplexTask(
-    input: string, 
-    _analysis: unknown
+    input: string
   ): Promise<{
     success: boolean;
     response: string;
@@ -590,8 +589,7 @@ ISO格式日期：${isoDate}
    * 处理调整指令
    */
   private async handleAdjustmentCommand(
-    input: string, 
-    _analysis: unknown
+    input: string
   ): Promise<{
     success: boolean;
     response: string;
@@ -602,7 +600,7 @@ ISO格式日期：${isoDate}
     const currentTasks = await this.dbTools.getRequiredUncompletedTasks();
     
     // 检查是否有冲突
-    const conflicts = await this.checkForConflicts(input, currentTasks);
+    const conflicts = await this.checkForConflicts();
     
     if (conflicts.length > 0) {
       return {
@@ -914,7 +912,7 @@ ${JSON.stringify(tasks.map(t => ({
   /**
    * 检查冲突
    */
-  private async checkForConflicts(_input: string, _tasks: Task[]): Promise<string[]> {
+  private async checkForConflicts(): Promise<string[]> {
     // 简化的冲突检查逻辑
     const conflicts: string[] = [];
     
