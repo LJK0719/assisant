@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/components/ui/mobile-navigation';
 import { Send, Brain, User, Loader2, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -22,6 +23,7 @@ interface AIChatInterfaceProps {
 
 export function AIChatInterface({ className = '' }: AIChatInterfaceProps) {
   const { fetchTasks } = useAppStore();
+  const isMobile = useIsMobile();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
@@ -153,10 +155,10 @@ export function AIChatInterface({ className = '' }: AIChatInterfaceProps) {
       </div>
 
       {/* 消息列表 */}
-      <div className="flex-1 p-4 space-y-4 overflow-y-auto max-h-96">
+      <div className={`flex-1 space-y-4 overflow-y-auto ${isMobile ? 'p-3' : 'p-4'} ${isMobile ? 'max-h-full' : 'max-h-96'}`}>
         {messages.map((message) => (
           <div key={message.id} className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+            <div className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-full flex items-center justify-center flex-shrink-0 ${
               message.role === 'user' 
                 ? 'bg-blue-600 text-white' 
                 : message.role === 'system'
@@ -164,21 +166,21 @@ export function AIChatInterface({ className = '' }: AIChatInterfaceProps) {
                 : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
             }`}>
               {message.role === 'user' ? (
-                <User className="w-4 h-4" />
+                <User className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
               ) : (
-                <Brain className="w-4 h-4" />
+                <Brain className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
               )}
             </div>
 
             <div className={`flex-1 ${message.role === 'user' ? 'text-right' : ''}`}>
-              <div className={`inline-block p-3 rounded-lg max-w-xs ${
+              <div className={`inline-block ${isMobile ? 'p-2.5' : 'p-3'} rounded-lg ${isMobile ? 'max-w-[85%]' : 'max-w-xs'} ${
                 message.role === 'user'
                   ? 'bg-blue-600 text-white'
                   : message.role === 'system'
                   ? 'bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300'
                   : 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-gray-100'
               }`}>
-                <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                <div className={`${isMobile ? 'text-sm' : 'text-sm'} whitespace-pre-wrap`}>{message.content}</div>
                 
                 {/* AI思考过程 */}
                 {message.thinking && (
@@ -228,24 +230,29 @@ export function AIChatInterface({ className = '' }: AIChatInterfaceProps) {
       </div>
 
       {/* 输入区域 */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+      <div className={`${isMobile ? 'p-3' : 'p-4'} border-t border-gray-200 dark:border-gray-700`}>
         <div className="flex gap-2">
           <textarea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="告诉我你的任务，或粘贴微信通知...&#10;例如：&#10;• 明天上午复习复分析第三章&#10;• 周三中午12点约学弟吃饭&#10;• 取快递（在小区门口）"
-            className="flex-1 resize-none border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            rows={3}
+            placeholder={isMobile 
+              ? "告诉我你的任务..."
+              : "告诉我你的任务，或粘贴微信通知...&#10;例如：&#10;• 明天上午复习复分析第三章&#10;• 周三中午12点约学弟吃饭&#10;• 取快递（在小区门口）"
+            }
+            className={`flex-1 resize-none border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white touch-target ${
+              isMobile ? 'min-h-[44px]' : ''
+            }`}
+            rows={isMobile ? 2 : 3}
             disabled={isLoading}
           />
           <Button 
             onClick={handleSendMessage} 
             disabled={!inputValue.trim() || isLoading}
-            size="sm"
-            className="self-end"
+            size={isMobile ? "default" : "sm"}
+            className={`self-end touch-target ${isMobile ? 'min-w-[44px] h-[44px] p-0' : ''}`}
           >
-            <Send className="w-4 h-4" />
+            <Send className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
           </Button>
         </div>
       </div>

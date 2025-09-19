@@ -17,6 +17,15 @@ module.exports = {
       },
     },
     extend: {
+      spacing: {
+        'safe': 'env(safe-area-inset-bottom)',
+      },
+      height: {
+        'screen-safe': 'calc(100vh - env(safe-area-inset-bottom))',
+      },
+      padding: {
+        'safe': 'env(safe-area-inset-bottom)',
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

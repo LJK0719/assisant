@@ -16,6 +16,24 @@ export const metadata: Metadata = {
   title: "AI事务代理智能体",
   description: "智能管理学习、工作、生活事务的AI代理助手，支持任务解析、智能调度、课程管理",
   keywords: ["AI助手", "事务管理", "智能体", "任务调度", "学习管理", "工作效率"],
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#1f2937" }
+  ],
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "AI事务代理"
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({

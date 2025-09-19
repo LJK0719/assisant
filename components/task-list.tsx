@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
 import { Button } from './ui/button';
+import { useIsMobile } from './ui/mobile-navigation';
 import { Task } from '@/lib/db/schema/simple';
 import { 
   Clock, 
@@ -15,7 +16,9 @@ import {
   GraduationCap,
   Edit2,
   Trash2,
-  StickyNote
+  StickyNote,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isPast } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -29,6 +32,7 @@ interface TaskListProps {
 export function TaskList({ tasks, title, showCompleted = false }: TaskListProps) {
   const { updateTask, deleteTask, selectTask, selectedTask } = useAppStore();
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const getTaskIcon = (type: Task['type']) => {
     switch (type) {
@@ -92,10 +96,10 @@ export function TaskList({ tasks, title, showCompleted = false }: TaskListProps)
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className={`${isMobile ? 'p-3' : 'p-4'} border-b border-gray-200 dark:border-gray-700`}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h2>
-          <div className="text-sm text-gray-500 dark:text-gray-400">
+          <h2 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-gray-900 dark:text-white`}>{title}</h2>
+          <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-500 dark:text-gray-400`}>
             {filteredTasks.length} 个任务
           </div>
         </div>
@@ -111,14 +115,14 @@ export function TaskList({ tasks, title, showCompleted = false }: TaskListProps)
             <div
               key={task.id}
               className={`
-                border-l-4 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700/50
+                border-l-4 transition-all duration-200 ${isMobile ? 'active:bg-gray-100 dark:active:bg-gray-700/70' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}
                 ${getPriorityColor(task.isRequired)}
                 ${isSelected ? 'ring-2 ring-blue-500' : ''}
                 ${isOverdue ? 'bg-red-50 dark:bg-red-900/10' : ''}
               `}
             >
               <div 
-                className="p-4 cursor-pointer"
+                className={`${isMobile ? 'p-3' : 'p-4'} cursor-pointer touch-target`}
                 onClick={() => {
                   selectTask(isSelected ? null : task);
                   setExpandedTask(isExpanded ? null : task.id);
@@ -132,12 +136,12 @@ export function TaskList({ tasks, title, showCompleted = false }: TaskListProps)
                       e.stopPropagation();
                       toggleTaskCompletion(task);
                     }}
-                    className="mt-1 flex-shrink-0"
+                    className={`${isMobile ? 'mt-0.5' : 'mt-1'} flex-shrink-0 touch-target ${isMobile ? 'p-1' : ''}`}
                   >
                     {task.isCompleted ? (
-                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <CheckCircle className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} text-green-500`} />
                     ) : (
-                      <Circle className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+                      <Circle className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} text-gray-400 hover:text-gray-600`} />
                     )}
                   </button>
 
@@ -145,22 +149,32 @@ export function TaskList({ tasks, title, showCompleted = false }: TaskListProps)
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       {getTaskIcon(task.type)}
-                      <h3 className={`font-medium text-gray-900 dark:text-white ${
+                      <h3 className={`${isMobile ? 'text-sm' : 'text-base'} font-medium text-gray-900 dark:text-white ${
                         task.isCompleted ? 'line-through text-gray-500' : ''
                       }`}>
                         {task.title}
                       </h3>
+                      {/* 移动端展开/收起指示器 */}
+                      {isMobile && (
+                        <div className="ml-auto">
+                          {isExpanded ? (
+                            <ChevronDown className="w-4 h-4 text-gray-400" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-gray-400" />
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* 任务元信息 */}
-                    <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                    <div className={`flex items-center ${isMobile ? 'gap-2 flex-wrap' : 'gap-4'} ${isMobile ? 'text-xs' : 'text-sm'} text-gray-500 dark:text-gray-400`}>
                       {task.scheduledTime && (
                         <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
+                          <Calendar className={`${isMobile ? 'w-3 h-3' : 'w-3 h-3'}`} />
                           <span className={isOverdue ? 'text-red-500 font-medium' : ''}>
                             {isToday(new Date(task.scheduledTime)) 
                               ? `今天 ${format(new Date(task.scheduledTime), 'HH:mm')}` 
-                              : format(new Date(task.scheduledTime), 'MM-dd HH:mm')
+                              : format(new Date(task.scheduledTime), isMobile ? 'MM-dd' : 'MM-dd HH:mm')
                             }
                           </span>
                         </div>
@@ -168,7 +182,7 @@ export function TaskList({ tasks, title, showCompleted = false }: TaskListProps)
 
                       {task.estimatedDuration && (
                         <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
+                          <Clock className={`${isMobile ? 'w-3 h-3' : 'w-3 h-3'}`} />
                           <span>{task.estimatedDuration}分钟</span>
                         </div>
                       )}
@@ -188,52 +202,92 @@ export function TaskList({ tasks, title, showCompleted = false }: TaskListProps)
                   </div>
 
                   {/* 操作按钮 */}
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // TODO: 实现编辑功能
-                      }}
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
+                  {!isMobile && (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // TODO: 实现编辑功能
+                        }}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        try {
-                          await deleteTask(task.id);
-                        } catch (error) {
-                          console.error('删除任务失败:', error);
-                          // 可以在这里添加用户友好的错误提示
-                          alert(`删除任务失败: ${error instanceof Error ? error.message : '未知错误'}`);
-                        }
-                      }}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            await deleteTask(task.id);
+                          } catch (error) {
+                            console.error('删除任务失败:', error);
+                            // 可以在这里添加用户友好的错误提示
+                            alert(`删除任务失败: ${error instanceof Error ? error.message : '未知错误'}`);
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* 展开的详细信息 */}
                 {isExpanded && (
-                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                  <div className={`${isMobile ? 'mt-3 pt-3' : 'mt-4 pt-4'} border-t border-gray-200 dark:border-gray-600`}>
                     {task.description && (
-                      <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800/50">
+                      <div className={`mb-3 ${isMobile ? 'p-2.5' : 'p-3'} bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800/50`}>
                         <div className="flex items-center gap-2 mb-2">
                           <StickyNote className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                          <h4 className="text-sm font-medium text-amber-800 dark:text-amber-300">备注</h4>
+                          <h4 className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-amber-800 dark:text-amber-300`}>备注</h4>
                         </div>
-                        <p className="text-sm text-amber-700 dark:text-amber-200">{task.description}</p>
+                        <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-amber-700 dark:text-amber-200`}>{task.description}</p>
                       </div>
                     )}
 
-                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                    {/* 移动端操作按钮 */}
+                    {isMobile && (
+                      <div className="mb-3 flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // TODO: 实现编辑功能
+                          }}
+                          className="flex-1 touch-target"
+                        >
+                          <Edit2 className="w-4 h-4 mr-1" />
+                          编辑
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (confirm('确定要删除这个任务吗？')) {
+                              try {
+                                await deleteTask(task.id);
+                              } catch (error) {
+                                console.error('删除任务失败:', error);
+                                alert(`删除任务失败: ${error instanceof Error ? error.message : '未知错误'}`);
+                              }
+                            }
+                          }}
+                          className="flex-1 text-red-600 hover:text-red-700 touch-target"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          删除
+                        </Button>
+                      </div>
+                    )}
+
+                    <div className={`flex items-center ${isMobile ? 'gap-2 flex-wrap text-xs' : 'gap-4 text-xs'} text-gray-500 dark:text-gray-400`}>
                       <span>创建: {formatDistanceToNow(new Date(task.createdAt), { addSuffix: true, locale: zhCN })}</span>
                       {task.lastAdjustedAt && task.lastAdjustedAt !== task.createdAt && (
                         <span>最后调整: {formatDistanceToNow(new Date(task.lastAdjustedAt), { addSuffix: true, locale: zhCN })}</span>
