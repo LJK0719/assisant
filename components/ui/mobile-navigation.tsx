@@ -5,8 +5,7 @@ import {
   MessageSquare, 
   CheckSquare,
   Calendar,
-  Mail,
-  Brain
+  Mail
 } from 'lucide-react';
 
 type ViewMode = 'chat' | 'tasks' | 'schedule' | 'messages';
@@ -152,5 +151,5 @@ export function useTouchGestures(onSwipeLeft?: () => void, onSwipeRight?: () => 
       element.removeEventListener('touchmove', onTouchMove);
       element.removeEventListener('touchend', onTouchEnd);
     };
-  }, [touchStart, touchEnd, onSwipeLeft, onSwipeRight]);
+  }, [touchStart, touchEnd, onSwipeLeft, onSwipeRight, onTouchStart, onTouchMove, onTouchEnd]);
 }

@@ -139,15 +139,24 @@ export function onOrientationChange(callback: (orientation: 'portrait' | 'landsc
 export function optimizeScrolling(element: HTMLElement | null) {
   if (!element) return;
   
-  element.style.webkitOverflowScrolling = 'touch';
-  element.style.overflowScrolling = 'touch';
+  // 设置webkit滚动优化
+  if (element.style.webkitOverflowScrolling !== undefined) {
+    element.style.webkitOverflowScrolling = 'touch';
+  }
+  if (element.style.overflowScrolling !== undefined) {
+    element.style.overflowScrolling = 'touch';
+  }
   
   // 添加will-change属性优化性能
   element.style.willChange = 'scroll-position';
   
   return () => {
-    element.style.webkitOverflowScrolling = '';
-    element.style.overflowScrolling = '';
+    if (element.style.webkitOverflowScrolling !== undefined) {
+      element.style.webkitOverflowScrolling = '';
+    }
+    if (element.style.overflowScrolling !== undefined) {
+      element.style.overflowScrolling = '';
+    }
     element.style.willChange = '';
   };
 }
