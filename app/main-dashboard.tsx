@@ -21,7 +21,7 @@ import {
 type ViewMode = 'chat' | 'tasks' | 'schedule' | 'messages';
 
 export function MainDashboard() {
-  const { tasks, fetchTasks, selectedTask, selectTask } = useAppStore();
+  const { tasks, fetchTasks, selectTask } = useAppStore();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('chat');
 

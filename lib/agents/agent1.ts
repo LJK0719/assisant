@@ -187,7 +187,7 @@ ISO格式日期：${isoDate}
    */
   private async handleComplexTask(
     input: string, 
-    analysis: any
+    _analysis: unknown
   ): Promise<{
     success: boolean;
     response: string;
@@ -309,12 +309,13 @@ ISO格式日期：${isoDate}
       const result = JSON.parse(content);
       
       // 处理建议的任务，转换日期格式
-      const processedTasks = result.suggestedTasks?.map((task: any) => {
+      const processedTasks = result.suggestedTasks?.map((task: Partial<InsertTask>) => {
         const processedTask = { ...task };
         
         // 处理scheduledTime - 只有当明确指定时间时才处理
-        if (processedTask.scheduledTime && typeof processedTask.scheduledTime === 'string' && processedTask.scheduledTime.trim() !== '') {
-          const scheduleDate = new Date(processedTask.scheduledTime);
+        const scheduledTimeStr = processedTask.scheduledTime as string | undefined;
+        if (scheduledTimeStr && typeof scheduledTimeStr === 'string' && scheduledTimeStr.trim() !== '') {
+          const scheduleDate = new Date(scheduledTimeStr);
           processedTask.scheduledTime = isNaN(scheduleDate.getTime()) ? null : scheduleDate;
         } else {
           // 默认不设置预计完成时间
@@ -322,8 +323,9 @@ ISO格式日期：${isoDate}
         }
         
         // 处理deadline - 只有当明确提到截止时间时才处理
-        if (processedTask.deadline && typeof processedTask.deadline === 'string' && processedTask.deadline.trim() !== '') {
-          const deadlineDate = new Date(processedTask.deadline);
+        const deadlineStr = processedTask.deadline as string | undefined;
+        if (deadlineStr && typeof deadlineStr === 'string' && deadlineStr.trim() !== '') {
+          const deadlineDate = new Date(deadlineStr);
           processedTask.deadline = isNaN(deadlineDate.getTime()) ? null : deadlineDate;
         } else {
           // 默认不设置截止时间
@@ -583,7 +585,7 @@ ISO格式日期：${isoDate}
    */
   private async handleAdjustmentCommand(
     input: string, 
-    analysis: any
+    _analysis: unknown
   ): Promise<{
     success: boolean;
     response: string;
@@ -614,16 +616,16 @@ ISO格式日期：${isoDate}
    */
   private async handleNewTask(
     input: string, 
-    analysis: any
+    analysis: unknown
   ): Promise<{
     success: boolean;
     response: string;
     actions?: string[];
   }> {
     // 添加新任务
-    if (analysis.taskInfo) {
+    if ((analysis as any)?.taskInfo) {
       // 处理日期字段，将字符串转换为Date对象
-      const taskData = { ...analysis.taskInfo };
+      const taskData = { ...(analysis as any).taskInfo };
       
       if (taskData.scheduledTime && typeof taskData.scheduledTime === 'string' && taskData.scheduledTime.trim() !== '') {
         const scheduleDate = new Date(taskData.scheduledTime);
@@ -788,7 +790,7 @@ ${JSON.stringify(tasks.map(t => ({
       content = content.replace(/```json\s*|```\s*/g, '').trim();
       
       const result = JSON.parse(content);
-      return result.schedule.map((item: any) => {
+      return result.schedule.map((item: { id: string; scheduledTime: string | Date; title?: string; reason?: string }) => {
         let scheduledTime: Date;
         if (typeof item.scheduledTime === 'string') {
           scheduledTime = new Date(item.scheduledTime);
@@ -825,7 +827,6 @@ ${JSON.stringify(tasks.map(t => ({
     summary: string;
   }> {
     const issues: string[] = [];
-    const now = new Date();
 
     // 检查是否有遗漏
     const scheduledIds = new Set(schedule.map(s => s.id));
@@ -896,7 +897,7 @@ ${JSON.stringify(tasks.map(t => ({
   /**
    * 检查冲突
    */
-  private async checkForConflicts(input: string, tasks: Task[]): Promise<string[]> {
+  private async checkForConflicts(_input: string, _tasks: Task[]): Promise<string[]> {
     // 简化的冲突检查逻辑
     const conflicts: string[] = [];
     
@@ -1106,8 +1107,8 @@ ${JSON.stringify(tasks.map(t => ({
       
       const result = JSON.parse(content);
       
-      const adjustments = result.adjustments?.map((adj: any) => {
-        const adjustment: any = {
+      const adjustments = result.adjustments?.map((adj: { taskId: string; taskTitle: string; newScheduledTime?: string; newDuration?: number; newDeadline?: string | null; newType?: string; newDescription?: string }) => {
+        const adjustment: { taskId: string; taskTitle: string; newScheduledTime?: Date; newDuration?: number; newDeadline?: Date | null; newType?: TaskType; newDescription?: string } = {
           taskId: adj.taskId,
           taskTitle: adj.taskTitle
         };

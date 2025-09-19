@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, messagesTable, Message, InsertMessage } from '@/lib/db';
+import { db, messagesTable, InsertMessage } from '@/lib/db';
 import { desc, eq } from 'drizzle-orm';
 
 // GET - 获取所有留言
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const messages = await db
       .select()

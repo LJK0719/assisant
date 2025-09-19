@@ -4,7 +4,7 @@ import { DatabaseTools } from '@/lib/agents/database-tools';
 const dbTools = new DatabaseTools();
 
 // GET - 获取所有任务
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const tasks = await dbTools.getAllTasks();
 

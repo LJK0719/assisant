@@ -13,8 +13,6 @@ import {
   Briefcase,
   Coffee,
   GraduationCap,
-  PlayCircle,
-  PauseCircle,
   Edit2,
   Trash2,
   StickyNote

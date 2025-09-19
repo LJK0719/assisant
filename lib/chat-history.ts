@@ -3,6 +3,8 @@
  * 使用内存存储，支持会话级别的历史记录
  */
 
+import { InsertTask } from '@/lib/db';
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';

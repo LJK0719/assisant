@@ -14,6 +14,14 @@ interface Message {
   isRead: boolean;
 }
 
+interface MessageFromAPI {
+  id: string;
+  authorName: string;
+  content: string;
+  createdAt: string;
+  isRead: boolean;
+}
+
 interface MessageBoardProps {
   className?: string;
 }
@@ -36,7 +44,7 @@ export function MessageBoard({ className = '' }: MessageBoardProps) {
       
       if (data.success) {
         // 转换日期字符串为Date对象
-        const messagesWithDates = data.messages.map((msg: any) => ({
+        const messagesWithDates = data.messages.map((msg: MessageFromAPI) => ({
           ...msg,
           createdAt: new Date(msg.createdAt)
         }));

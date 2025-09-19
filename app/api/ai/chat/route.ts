@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     // 添加助手回复到历史
     if (result.success) {
       addAssistantMessage(currentSessionId, result.response, {
-        taskAnalysis: (result as any).taskAnalysis,
+        taskAnalysis: result.taskAnalysis,
         actions: result.actions,
         conflicts: result.conflicts
       });
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         response: result.response,
         actions: result.actions,
         conflicts: result.conflicts,
-        taskAnalysis: (result as any).taskAnalysis, // 任务分析信息（如果有）
+        taskAnalysis: result.taskAnalysis, // 任务分析信息（如果有）
         sessionId: currentSessionId, // 返回会话ID供前端使用
         timestamp: new Date().toISOString()
       } : undefined,
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
   try {
     // 清空聊天历史（目前只返回成功）
     return NextResponse.json({ 
