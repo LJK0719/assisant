@@ -3,7 +3,11 @@
  * 使用内存存储，支持会话级别的历史记录
  */
 
-import { InsertTask } from '@/lib/db';
+export interface TaskAnalysis {
+  originalInput: string;
+  suggestedTasks: Array<Record<string, unknown>>;
+  requiresConfirmation: boolean;
+}
 
 export interface ChatMessage {
   id: string;
@@ -11,7 +15,7 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
   metadata?: {
-    taskAnalysis?: any;
+    taskAnalysis?: TaskAnalysis;
     actions?: string[];
     conflicts?: string[];
   };

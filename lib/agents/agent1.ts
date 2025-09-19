@@ -4,6 +4,12 @@ import { Agent2 } from './agent2';
 import { Task, TaskType, InsertTask } from '@/lib/db';
 import { ChatMessage, findRecentComplexTask } from '@/lib/chat-history';
 
+// 定义分析结果的接口
+interface AnalysisResult {
+  taskInfo?: Partial<InsertTask>;
+  [key: string]: unknown;
+}
+
 // OpenAI 客户端配置
 const openai = new OpenAI({
   apiKey: process.env.SILICONFLOW_API_KEY!,
@@ -623,12 +629,14 @@ ISO格式日期：${isoDate}
     actions?: string[];
   }> {
     // 添加新任务
-    if ((analysis as any)?.taskInfo) {
+    const analysisResult = analysis as AnalysisResult;
+    if (analysisResult?.taskInfo) {
       // 处理日期字段，将字符串转换为Date对象
-      const taskData = { ...(analysis as any).taskInfo };
+      const taskData = { ...analysisResult.taskInfo };
       
-      if (taskData.scheduledTime && typeof taskData.scheduledTime === 'string' && taskData.scheduledTime.trim() !== '') {
-        const scheduleDate = new Date(taskData.scheduledTime);
+      const scheduledTimeStr = taskData.scheduledTime as string | undefined;
+      if (scheduledTimeStr && typeof scheduledTimeStr === 'string' && scheduledTimeStr.trim() !== '') {
+        const scheduleDate = new Date(scheduledTimeStr);
         taskData.scheduledTime = isNaN(scheduleDate.getTime()) ? null : scheduleDate;
       } else {
         // 默认不设置预计完成时间，除非用户明确指定
@@ -637,8 +645,9 @@ ISO格式日期：${isoDate}
       
       // 只有当明确提供了deadline时才处理，否则保持undefined（数据库中为null）
       if (taskData.deadline !== undefined) {
-        if (typeof taskData.deadline === 'string' && taskData.deadline.trim() !== '') {
-          const deadlineDate = new Date(taskData.deadline);
+        const originalDeadline = taskData.deadline;
+        if (originalDeadline && typeof originalDeadline === 'string' && (originalDeadline as string).trim() !== '') {
+          const deadlineDate = new Date(originalDeadline);
           taskData.deadline = isNaN(deadlineDate.getTime()) ? null : deadlineDate;
         } else {
           taskData.deadline = null;
@@ -661,7 +670,15 @@ ISO格式日期：${isoDate}
         taskData.isRequired = false;
       }
       
-      const newTask = await this.dbTools.addTask(taskData);
+      // 确保必需字段存在
+      if (!taskData.title || !taskData.type) {
+        return {
+          success: false,
+          response: '任务数据不完整，缺少标题或类型'
+        };
+      }
+      
+      const newTask = await this.dbTools.addTask(taskData as InsertTask);
       console.log(`[Agent1] 添加新任务:`, newTask);
     }
 
